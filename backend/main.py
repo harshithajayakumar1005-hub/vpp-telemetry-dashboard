@@ -29,3 +29,6 @@ async def update_telemetry(data: Telemetry):
 @app.get("/api/telemetry")
 async def get_telemetry():
     return latest_data
+@app.get("/api/telemetry")
+def get_telemetry():
+    return latest_data
