@@ -1,25 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import React, { useState, useEffect } from 'react';
+import './App.css';
 
+// Define the interface for Telemetry Data structure
 interface TelemetryData {
-  time: string;
   load: number;
   solar: number;
   soc: number;
+  time?: string;
 }
+
+// Fallback to local server if REACT_APP_API_URL is not set
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 function App() {
   const [telemetry, setTelemetry] = useState<TelemetryData>({
-    time: '',
     load: 0,
     solar: 0,
     soc: 0,
@@ -29,65 +23,60 @@ function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      fetch('http://localhost:8000/api/telemetry')
+      fetch(`${API_URL}/api/telemetry`)
         .then((res) => res.json())
-        .then((data) => {
+        .then((data: TelemetryData) => {
           const currentTime = new Date().toLocaleTimeString();
           const newData = { ...data, time: currentTime };
 
           setTelemetry(newData);
           setHistory((prev) => [...prev.slice(-14), newData]);
         })
-        .catch((err) => console.error(err));
+        .catch((err) => console.error('Error fetching telemetry:', err));
     }, 1000);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div style={{ padding: '30px', fontFamily: 'sans-serif', backgroundColor: '#0f172a', color: '#fff', minHeight: '100vh' }}>
-      <h2>⚡ VPP Real-Time Telemetry & Monitoring Dashboard</h2>
+    <div className="App" style={{ backgroundColor: '#0f172a', color: '#ffffff', minHeight: '100vh', padding: '20px' }}>
+      <h1>⚡ VPP Real-Time Telemetry & Monitoring Dashboard</h1>
 
-      {/* Low Battery Alert Banner */}
-      {telemetry.soc < 30 && (
-        <div style={{ backgroundColor: '#ef4444', color: '#fff', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontWeight: 'bold' }}>
+      {/* Low SOC Warning Alert */}
+      {telemetry.soc <= 0 && (
+        <div style={{ backgroundColor: '#ef4444', color: '#fff', padding: '10px 15px', borderRadius: '5px', marginBottom: '20px', fontWeight: 'bold' }}>
           ⚠️ Warning: Battery SOC is low ({telemetry.soc}%)! Consider reducing load or charging.
         </div>
       )}
 
-      {/* Metrics Cards */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
-        <div style={{ background: '#1e293b', padding: '20px', borderRadius: '10px', flex: 1, textAlign: 'center' }}>
+      {/* Metrics Cards Display */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
           <h3>🔌 Load Power</h3>
-          <p style={{ fontSize: '28px', fontWeight: 'bold', color: '#f87171' }}>{telemetry.load} kW</p>
+          <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f43f5e' }}>{telemetry.load} kW</p>
         </div>
-        <div style={{ background: '#1e293b', padding: '20px', borderRadius: '10px', flex: 1, textAlign: 'center' }}>
-          <h3>☀️ Solar Generation</h3>
-          <p style={{ fontSize: '28px', fontWeight: 'bold', color: '#facc15' }}>{telemetry.solar} kW</p>
+
+        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
+          <h3>🌞 Solar Generation</h3>
+          <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#eab308' }}>{telemetry.solar} kW</p>
         </div>
-        <div style={{ background: '#1e293b', padding: '20px', borderRadius: '10px', flex: 1, textAlign: 'center' }}>
+
+        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
           <h3>🔋 Battery SOC</h3>
-          <p style={{ fontSize: '28px', fontWeight: 'bold', color: telemetry.soc < 30 ? '#ef4444' : '#4ade80' }}>
-            {telemetry.soc} %
-          </p>
+          <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#22c55e' }}>{telemetry.soc} %</p>
         </div>
       </div>
 
-      {/* Real-time Line Chart */}
-      <div style={{ background: '#1e293b', padding: '20px', borderRadius: '10px' }}>
-        <h3 style={{ marginBottom: '20px' }}>📈 Real-Time Power & SOC Trends</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={history}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-            <XAxis dataKey="time" stroke="#94a3b8" />
-            <YAxis stroke="#94a3b8" />
-            <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }} />
-            <Legend />
-            <Line type="monotone" dataKey="load" name="Load (kW)" stroke="#f87171" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="solar" name="Solar (kW)" stroke="#facc15" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="soc" name="Battery SOC (%)" stroke="#4ade80" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+      {/* History Log Section */}
+      <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px' }}>
+        <h3>📊 Real-Time Telemetry Log (Last 15 readings)</h3>
+        <ul style={{ listStyleType: 'none', paddingLeft: 0, maxHeight: '200px', overflowY: 'auto' }}>
+          {history.map((item, index) => (
+            <li key={index} style={{ borderBottom: '1px solid #334155', padding: '8px 0', fontSize: '0.9rem' }}>
+              <strong>[{item.time}]</strong> Load: {item.load} kW | Solar: {item.solar} kW | SOC: {item.soc}%
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
