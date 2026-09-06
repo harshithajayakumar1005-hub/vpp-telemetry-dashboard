@@ -5,14 +5,14 @@ import requests
 API_URL = "https://vpp-telemetry-dashboard.onrender.com/api/telemetry"
 
 def generate_vpp_data():
-    soc = 50.0
+    soc = 65.0  # Start with a healthy battery percentage
     while True:
-        load = round(random.uniform(1.0, 10.0), 2)
-        solar = round(random.uniform(0.0, 8.0), 2)
+        load = round(random.uniform(2.0, 8.0), 2)
+        solar = round(random.uniform(1.0, 7.0), 2)
         
-        net_power = solar - load
-        soc += net_power * 0.1
-        soc = max(0.0, min(100.0, soc))
+        # Smoothly fluctuate SOC for a realistic demo range (between 30% and 90%)
+        soc += random.uniform(-2.5, 2.5)
+        soc = max(30.0, min(90.0, soc))
         
         data = {
             "load": load,
