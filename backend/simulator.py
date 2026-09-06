@@ -2,7 +2,7 @@ import time
 import random
 import requests
 
-API_URL = "http://localhost:8000/api/telemetry"
+API_URL = "https://vpp-telemetry-dashboard.onrender.com/api/telemetry"
 
 def generate_vpp_data():
     soc = 50.0
